@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile.php
+        image: auth-lara-image
+        container_name: auth-lara-app
+        restart: unless-stopped
+        tty: true
+        environment:
+        - "DB_PORT=3306"
+        - "DB_HOST=mysql"
+        working_dir: /var/www
+        networks:
+        - auth-lara-network
+        volumes:
+        - .:/var/www
+
+    nginx:
+        image: nginx:alpine
+        container_name: auth-lara-nginx
+        restart: unless-stopped
+        tty: true
+        ports:
+        - "806:80"
+        - "4436:443"
+        networks:
+        - auth-lara-network
+        volumes:
+        - .:/var/www
+        - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        - ./docker/nginx/ssl:/etc/nginx/ssl
+
+    mysql:
+        image: mysql:8.0
+        container_name: auth-lara-mysql
+        restart: unless-stopped
+        tty: true
+        ports:
+        - "33066:3306"
+        networks:
+        - auth-lara-network
+        environment:
+        - "MYSQL_ROOT_PASSWORD=${DB_PASSWORD}"
+        - "MYSQL_USER=${DB_USERNAME}"
+        - "MYSQL_PASSWORD=${DB_PASSWORD}"
+        - "MYSQL_DATABASE=${DB_DATABASE}"
+        volumes:
+        - ./docker/mysql/db:/var/lib/mysql
+
+networks:
+    auth-lara-network:
+        driver: bridge
